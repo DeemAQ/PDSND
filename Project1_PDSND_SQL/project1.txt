@@ -1,0 +1,102 @@
+/* Question 1 Set 1 */
+
+WITH family_movies AS
+    (SELECT *
+     FROM category
+     WHERE name in ('Animation',
+                    'Children',
+                    'Classics',
+                    'Comedy',
+                    'Family',
+                    'Music'))
+
+SELECT film.title,
+       family_movies.name AS category_name,
+       COUNT(rental.rental_id) AS rental_count
+FROM film
+JOIN film_category ON film.film_id = film_category.film_id
+JOIN family_movies ON film_category.category_id = family_movies.category_id
+JOIN inventory ON inventory.film_id = film.film_id
+JOIN rental ON rental.inventory_id = inventory.inventory_id
+GROUP BY title,
+         category_name
+ORDER BY category_name,
+         title;
+
+
+
+/* Question 2 Set 2 */
+
+WITH family_movies AS
+    (SELECT *
+     FROM category
+     WHERE name in ('Animation',
+                    'Children',
+                    'Classics',
+                    'Comedy',
+                    'Family',
+                    'Music'))
+
+
+SELECT film.title AS film_title,
+       family_movies.name AS category_name,
+       film.rental_duration,
+       NTILE(4) OVER(PARTITION BY film.rental_duration
+                     ORDER BY film.rental_duration) AS standard_quartile
+FROM film
+JOIN film_category ON film.film_id = film_category.film_id
+JOIN family_movies ON film_category.category_id = family_movies.category_id
+ORDER BY standard_quartile;
+
+
+
+/* Question 3 Set 3 */
+
+WITH family_movies AS
+    (SELECT *
+     FROM category
+     WHERE name in ('Animation',
+                    'Children',
+                    'Classics',
+                    'Comedy',
+                    'Family',
+                    'Music')),
+
+    quartile_table AS
+    (SELECT family_movies.*,
+            NTILE(4) OVER(PARTITION BY film.rental_duration) AS standard_quartile
+     FROM family_movies
+     JOIN film_category ON family_movies.category_id = film_category.category_id
+     JOIN film ON film_category.film_id = film.film_id)
+
+
+SELECT name AS category_name,
+       standard_quartile,
+       COUNT(standard_quartile) AS std_quart_count
+FROM quartile_table
+GROUP BY category_name,
+         standard_quartile
+ORDER BY standard_quartile,
+		 category_name;
+
+
+
+/* Question 1 Set 2 */
+
+WITH sub AS
+    (SELECT DATE_PART('month', rental.rental_date) AS rental_month,
+            DATE_PART('year', rental.rental_date) AS rental_year,
+            store.store_id
+     FROM rental
+     JOIN staff ON rental.staff_id = staff.staff_id
+     JOIN store ON staff.store_id = store.store_id)
+     
+SELECT rental_month,
+       rental_year,
+       store_id,
+       COUNT(rental_month) AS count_rentals
+FROM sub
+GROUP BY rental_month,
+         rental_year,
+         store_id
+ORDER BY count_rentals DESC;
